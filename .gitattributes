@@ -1,0 +1,9 @@
+* text=auto
+*.md text eol=lf
+*.mjs text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.sh text eol=lf
+*.yaml text eol=lf
+LICENSE text eol=lf

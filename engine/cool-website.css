@@ -1,0 +1,432 @@
+/* ============================================================================
+   cool-website.css: the taste floor
+   ----------------------------------------------------------------------------
+   Two layers, and the split matters:
+
+     TOKENS   what you override per brand. Colour roles, the type ramp, the
+              spacing scale, elevation, motion. A brand is ~12 values.
+     DEVICES  what the engine drives. Do not restyle these to taste; they are
+              the mechanism. Style your own markup instead.
+
+   Nothing here draws a "component". There are no card, badge, or pill classes,
+   because a stylesheet that ships those is how every page built on it ends up
+   with the same shapes. You get a floor and a vocabulary; the composition is
+   yours.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- tokens -- */
+:root {
+  /* --- colour roles. Override these six and the page is rebranded. -------- */
+  --cw-canvas:      #08090b;   /* the page ground. Drift interpolates this.   */
+  --cw-surface:     #101217;   /* anything raised off the ground             */
+  --cw-ink:         #f4f2ef;   /* primary text                               */
+  --cw-ink-soft:    #9a9ba1;   /* secondary text. Tinted, never flat gray.   */
+  --cw-accent:      #d8ff3e;   /* ONE accent. It owns a region, not confetti. */
+  --cw-accent-ink:  #08090b;   /* text that sits on the accent               */
+
+  --cw-hairline:    color-mix(in oklab, var(--cw-ink) 12%, transparent);
+  --cw-hairline-strong: color-mix(in oklab, var(--cw-ink) 22%, transparent);
+
+  /* --- type. Two families max. Display carries voice, text carries prose. - */
+  --cw-font-display: "Instrument Sans", "Geist", system-ui, sans-serif;
+  --cw-font-text:    "Geist", system-ui, sans-serif;
+  --cw-font-mono:    "Geist Mono", ui-monospace, monospace;
+
+  /* Fluid ramp. Tracking tightens as size grows because a face set at 6rem
+     with 0 tracking reads loose; this is optical correction, not decoration. */
+  --cw-t-xs:   clamp(0.75rem, 0.72rem + 0.15vw, 0.82rem);
+  --cw-t-sm:   clamp(0.875rem, 0.84rem + 0.18vw, 0.95rem);
+  --cw-t-base: clamp(1rem, 0.96rem + 0.22vw, 1.125rem);
+  --cw-t-lg:   clamp(1.2rem, 1.1rem + 0.5vw, 1.5rem);
+  --cw-t-xl:   clamp(1.6rem, 1.35rem + 1.2vw, 2.25rem);
+  --cw-t-2xl:  clamp(2.1rem, 1.6rem + 2.4vw, 3.4rem);
+  --cw-t-3xl:  clamp(2.8rem, 1.9rem + 4.2vw, 5rem);
+  --cw-t-4xl:  clamp(3.4rem, 1.9rem + 6.6vw, 7.5rem);
+
+  --cw-track-tight:  -0.035em;
+  --cw-track-snug:   -0.02em;
+  --cw-track-normal: -0.005em;
+  --cw-track-wide:    0.08em;
+
+  --cw-leading-none: 0.94;
+  --cw-leading-tight: 1.06;
+  --cw-leading-body: 1.62;
+
+  --cw-measure: 62ch;
+
+  /* --- space. 4px base: the useful middle steps an 8-only scale misses. --- */
+  --cw-1: 0.25rem;  --cw-2: 0.5rem;   --cw-3: 0.75rem;  --cw-4: 1rem;
+  --cw-5: 1.5rem;   --cw-6: 2rem;     --cw-7: 3rem;     --cw-8: 4rem;
+  --cw-9: 6rem;     --cw-10: 8rem;    --cw-11: 12rem;
+
+  /* Section rhythm is fluid so a phone doesn't inherit desktop air. */
+  --cw-section: clamp(4.5rem, 9vw, 11rem);
+  --cw-gutter:  clamp(1.25rem, 5vw, 5.5rem);
+  --cw-maxw:    82rem;
+
+  /* --- radius. Pick one scale for the page and hold it. ------------------- */
+  --cw-r-sm: 6px;  --cw-r-md: 12px;  --cw-r-lg: 20px;  --cw-r-pill: 999px;
+
+  /* --- elevation. Every shadow has an offset AND a soft blur, and is tinted
+         to the canvas hue. A zero-offset coloured halo is decoration, not
+         depth, so there isn't one here. ---------------------------------- */
+  --cw-shadow-color: 220 40% 2%;
+  --cw-e1: 0 1px 2px hsl(var(--cw-shadow-color) / 0.28),
+           0 2px 6px -1px hsl(var(--cw-shadow-color) / 0.20);
+  --cw-e2: 0 2px 4px hsl(var(--cw-shadow-color) / 0.24),
+           0 8px 18px -4px hsl(var(--cw-shadow-color) / 0.30);
+  --cw-e3: 0 4px 8px hsl(var(--cw-shadow-color) / 0.22),
+           0 18px 40px -8px hsl(var(--cw-shadow-color) / 0.38),
+           0 48px 90px -24px hsl(var(--cw-shadow-color) / 0.30);
+
+  /* Edge light: a 1px top highlight sells a raised surface better than any
+     amount of blur, because real raised things catch light on their lip. */
+  --cw-edge: inset 0 1px 0 color-mix(in oklab, var(--cw-ink) 10%, transparent);
+
+  /* --- motion. Built-in CSS easings are too weak for UI. ------------------ */
+  --cw-ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --cw-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --cw-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --cw-d-fast: 160ms;  --cw-d-base: 240ms;  --cw-d-slow: 420ms;
+
+  --cw-z-stage: 1; --cw-z-copy: 20; --cw-z-chrome: 60;
+}
+
+/* --------------------------------------------------------------- reset -- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--cw-canvas);
+  color: var(--cw-ink);
+  font-family: var(--cw-font-text);
+  font-size: var(--cw-t-base);
+  line-height: var(--cw-leading-body);
+  letter-spacing: var(--cw-track-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-synthesis-weight: none;
+  overflow-x: clip;
+}
+img, video, canvas, svg { display: block; max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+
+/* ------------------------------------------------- the browser surfaces --
+   The parts you did not draw still carry the design. Selection, caret, focus
+   ring, scrollbar and tabular numerals all ship with defaults that belong to no
+   design system. Theming them is the cheapest signal that a page was built
+   rather than assembled, and it is the step that gets skipped most reliably. */
+::selection { background: var(--cw-accent); color: var(--cw-accent-ink); }
+:root { caret-color: var(--cw-accent); accent-color: var(--cw-accent); }
+:focus-visible {
+  outline: 2px solid var(--cw-accent);
+  outline-offset: 3px;
+  border-radius: var(--cw-r-sm);
+}
+:where(a) { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.22em; }
+@supports (scrollbar-color: auto) {
+  html { scrollbar-color: color-mix(in oklab, var(--cw-ink) 26%, transparent) transparent; scrollbar-width: thin; }
+}
+:where(table, .cw-nums, [data-cw-count]) { font-variant-numeric: tabular-nums; }
+
+/* ----------------------------------------------------------- typography -- */
+.cw-display {
+  font-family: var(--cw-font-display);
+  font-weight: 500;
+  line-height: var(--cw-leading-none);
+  letter-spacing: var(--cw-track-tight);
+  text-wrap: balance;
+  margin: 0;
+}
+.cw-display--xl { font-size: var(--cw-t-4xl); }
+.cw-display--lg { font-size: var(--cw-t-3xl); }
+.cw-display--md { font-size: var(--cw-t-2xl); letter-spacing: var(--cw-track-snug); }
+.cw-lede {
+  font-size: var(--cw-t-lg);
+  line-height: 1.44;
+  letter-spacing: var(--cw-track-snug);
+  color: var(--cw-ink);
+  max-width: 46ch;
+  text-wrap: pretty;
+  margin: 0;
+}
+.cw-body { max-width: var(--cw-measure); color: var(--cw-ink-soft); text-wrap: pretty; margin: 0; }
+.cw-label {
+  font-family: var(--cw-font-mono);
+  font-size: var(--cw-t-xs);
+  letter-spacing: var(--cw-track-wide);
+  text-transform: uppercase;
+  color: var(--cw-ink-soft);
+}
+
+/* ---------------------------------------------------------------- layout -- */
+.cw-wrap { width: 100%; max-width: var(--cw-maxw); margin-inline: auto; padding-inline: var(--cw-gutter); }
+.cw-section { padding-block: var(--cw-section); }
+/* More space above a heading than below it: the gap belongs to the boundary,
+   not to the pair. */
+.cw-stack > * + * { margin-top: var(--cw-4); }
+.cw-stack > :is(h1,h2,h3) { margin-top: var(--cw-7); }
+.cw-stack > :is(h1,h2,h3):first-child { margin-top: 0; }
+.cw-rule { height: 1px; border: 0; background: var(--cw-hairline); margin: 0; }
+
+/* =============================================================== DEVICES ==
+   Driven by the engine. Restyle your own markup, not these.                */
+
+.cw-act--pinned { position: relative; }
+.cw-stage {
+  position: sticky; top: 0;
+  height: 100vh; height: 100svh;
+  overflow: clip;
+  z-index: var(--cw-z-stage);
+}
+
+/* scrub / sequence media */
+.cw-stage :is(video[data-cw-scrub], canvas[data-cw-sequence], .cw-stage__poster) {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+video[data-cw-scrub] { opacity: 0; transition: opacity 380ms var(--cw-ease-out); }
+.cw-has-clip video[data-cw-scrub] { opacity: 1; }
+/* The poster is a live frame-holder, not a placeholder: it stays up until a
+   real video frame has painted, which is what stops the blank-stage flash. */
+.cw-stage__poster { z-index: 0; transition: opacity 380ms var(--cw-ease-out); }
+.cw-has-clip .cw-stage__poster { opacity: 0; }
+
+/* A scrim only where text sits. A full-frame darkening layer flattens the
+   image everywhere to fix contrast in one corner. */
+.cw-scrim {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: linear-gradient(
+    var(--cw-scrim-angle, 180deg),
+    color-mix(in oklab, var(--cw-canvas) var(--cw-scrim-a, 78%), transparent) 0%,
+    color-mix(in oklab, var(--cw-canvas) 30%, transparent) 42%,
+    transparent 68%);
+}
+/* Point the scrim at the copy. A scrim gradient that darkens the top while the
+   copy sits at the bottom fixes contrast nowhere and flattens the image
+   everywhere, which is the most common way text-over-video goes wrong. */
+.cw-scrim--bottom { --cw-scrim-angle: 0deg; }
+.cw-scrim--left   { --cw-scrim-angle: 90deg; }
+.cw-scrim--right  { --cw-scrim-angle: 270deg; }
+
+/* Corner scrims, for copy anchored to a corner. An edge gradient has to darken
+   a whole band across the frame to cover one corner; a corner gradient puts the
+   density where the text is and leaves the rest of the image alone. Pair with
+   .cw-copy--lead / .cw-copy--trail. */
+.cw-scrim--lead {
+  background: linear-gradient(to top right,
+    color-mix(in oklab, var(--cw-canvas) 94%, transparent) 0%,
+    color-mix(in oklab, var(--cw-canvas) 72%, transparent) 30%,
+    color-mix(in oklab, var(--cw-canvas) 30%, transparent) 52%,
+    transparent 72%);
+}
+.cw-scrim--trail {
+  background: linear-gradient(to top left,
+    color-mix(in oklab, var(--cw-canvas) 94%, transparent) 0%,
+    color-mix(in oklab, var(--cw-canvas) 72%, transparent) 30%,
+    color-mix(in oklab, var(--cw-canvas) 30%, transparent) 52%,
+    transparent 72%);
+}
+/* A band across the bottom, for copy that spans the full width of the frame.
+   That is what both corner anchors become below 860px, and it is also the right
+   shape whenever the copy block is wider than a corner. */
+.cw-scrim--band {
+  background: linear-gradient(to top,
+    color-mix(in oklab, var(--cw-canvas) 94%, transparent) 0%,
+    color-mix(in oklab, var(--cw-canvas) 74%, transparent) 22%,
+    color-mix(in oklab, var(--cw-canvas) 30%, transparent) 42%,
+    transparent 58%);
+}
+.cw-scrim--vignette {
+  background: radial-gradient(120% 90% at 50% 45%, transparent 40%,
+              color-mix(in oklab, var(--cw-canvas) 70%, transparent) 100%);
+}
+
+/* copy over a stage.
+   max-width is in rem, never ch. A `ch` on this container resolves against the
+   CONTAINER's font-size (body size), not the display size of the heading inside
+   it, so `max-width: 20ch` here silently produces a ~180px column and wraps a
+   hero headline to six lines. Set a ch measure on the text element itself. */
+.cw-copy {
+  position: absolute; z-index: var(--cw-z-copy);
+  inset-inline: var(--cw-gutter);
+  max-width: min(46rem, 76vw);
+  will-change: opacity, transform;
+}
+.cw-copy--lead   { left: var(--cw-gutter); bottom: clamp(3rem, 12vh, 9rem); }
+/* inset-inline FIRST. It is the shorthand for left+right, so declaring it after
+   `left: 50%` resets left to auto and the block drifts off the left edge. */
+.cw-copy--center { inset-inline: auto; left: 50%; top: 50%; translate: -50% -50%; text-align: center; }
+.cw-copy--trail  { inset-inline: auto; right: var(--cw-gutter); bottom: clamp(3rem, 12vh, 9rem); text-align: right; }
+
+/* cue defaults: the engine writes opacity/transform inline, these are the
+   pre-paint state so nothing flashes before the first read() */
+[data-cw-cue] { opacity: 0; will-change: opacity, transform; }
+.cw-ready [data-cw-cue] { transition: none; }
+
+/* kinetic split */
+.cw-split { display: inline-block; overflow: hidden; vertical-align: top; }
+/* Descenders live below the baseline; a line mask clipped to the line box eats
+   the tails off g, y, p, j. The padding buys them room back. */
+.cw-split--line { display: block; padding-bottom: 0.14em; margin-bottom: -0.14em; }
+.cw-split__i { display: inline-block; will-change: transform, opacity; }
+.cw-is-split { opacity: 1 !important; }
+
+/* horizontal rail */
+[data-cw-pan] { display: flex; will-change: transform; }
+
+/* reveal + parallax */
+[data-cw-reveal] { will-change: clip-path; }
+[data-cw-parallax] { will-change: transform; }
+
+/* flow reveal (fires once) */
+[data-cw-in], [data-cw-stagger] > * {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition: opacity 620ms var(--cw-ease-out), transform 620ms var(--cw-ease-out);
+}
+[data-cw-in].cw-in, [data-cw-stagger] > .cw-in { opacity: 1; transform: none; }
+
+/* pointer devices */
+[data-cw-tilt] { transform-style: preserve-3d; will-change: transform; }
+[data-cw-magnet] { will-change: transform; }
+/* isolation always; position only if nothing more specific already set it.
+   Written with :where() (zero specificity) on purpose: a plain `position:
+   relative` here has the same weight as `.cw-stage` and, being later in the
+   file, silently wins. A stage carrying both attributes then stops being
+   sticky and the whole act scrolls away instead of pinning. */
+[data-cw-spotlight] { isolation: isolate; }
+:where([data-cw-spotlight]) { position: relative; }
+[data-cw-spotlight]::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  background: radial-gradient(
+    28rem 28rem at calc(var(--cw-mx, 0.5) * 100%) calc(var(--cw-my, 0.5) * 100%),
+    color-mix(in oklab, var(--cw-accent) 16%, transparent), transparent 70%);
+  opacity: 0; transition: opacity var(--cw-d-slow) var(--cw-ease-out);
+}
+[data-cw-spotlight]:hover::after { opacity: 1; }
+
+/* =========================================================== WORLDFLIGHT ==
+   One fixed stage for the whole page. The only thing in document flow is the
+   spacer, and it is empty. If you find yourself adding a section here, you want
+   act mode instead: the moment a real block scrolls past the fixed stage, the
+   page has a seam again and the whole point is gone.                        */
+
+[data-cw-mode="worldflight"] { position: relative; }
+
+.cw-world {
+  position: fixed; inset: 0;
+  overflow: clip;
+  z-index: var(--cw-z-stage);
+  background: var(--cw-canvas);
+}
+
+/* Every leg is mounted for the life of the page and stacked in the same box.
+   The engine owns opacity, visibility and z-index here; do not set them. */
+.cw-world__seg {
+  position: absolute; inset: 0;
+  opacity: 0;
+  will-change: opacity;
+}
+.cw-world__seg > :is(video, img, canvas) {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+/* The poster is the frame-holder AND the first camera move: the engine pushes
+   it in slowly until a real decoded frame is available to replace it. */
+.cw-world__poster {
+  z-index: 0;
+  transform-origin: 50% 50%;
+  transition: opacity 420ms var(--cw-ease-out);
+}
+.cw-world__seg > video { z-index: 1; }
+.cw-world__seg.cw-has-clip .cw-world__poster { opacity: 0; }
+/* The act stylesheet lights a clip through its ancestor act. A worldflight leg
+   has no act, so match the class the engine also writes on the clip itself. */
+video[data-cw-scrub].cw-has-clip { opacity: 1; }
+
+/* The copy layer is fixed too, and inert by default: the engine hands
+   pointer-events back to a block only while it is actually legible. */
+.cw-world__copy {
+  position: fixed; inset: 0;
+  z-index: var(--cw-z-copy);
+  pointer-events: none;
+}
+.cw-world__cwrim { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+[data-cw-copy] {
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+.cw-ready [data-cw-copy] { transition: none; }
+
+/* The track. Empty on purpose. */
+.cw-world__spacer { pointer-events: none; }
+
+/* scroll progress */
+[data-cw-progress] {
+  position: fixed; inset: 0 0 auto 0; height: 2px; z-index: var(--cw-z-chrome);
+  background: var(--cw-accent); transform-origin: 0 50%; transform: scaleX(0);
+  will-change: transform;
+}
+
+/* ----------------------------------------------------------- atmosphere --
+   Depth is not only shadow. Grain keeps a flat dark ground from banding, and
+   it is the difference between "a dark page" and "a lit room". */
+.cw-grain { position: fixed; inset: 0; pointer-events: none; z-index: 3; opacity: 0.045; }
+.cw-grain::before {
+  content: ""; position: absolute; inset: -50%;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");
+}
+
+/* -------------------------------------------------------- reduced motion -- */
+@media (prefers-reduced-motion: reduce) {
+  /* Fewer and gentler, not zero. Opacity still carries the reveal so the page
+     is comprehensible; every position change is dropped. */
+  [data-cw-in], [data-cw-stagger] > * { transform: none; transition-duration: 220ms; }
+  [data-cw-parallax], [data-cw-pan], .cw-split__i { transform: none !important; }
+  /* A wipe is a position change too. Show reveal content settled. */
+  [data-cw-reveal] { clip-path: none !important; }
+  /* A rail's transform IS its navigation, not decoration. Zeroing it the way
+     parallax and kinetic type are zeroed parks the act on its first screenful
+     and makes everything past the fold unreachable: a device degrading into
+     missing content. Hand the travel back to the reader as an ordinary scroll
+     region instead, so the same items are all still gettable without motion.
+     A build that would rather re-lay the rail out as a grid can still do that;
+     this is the floor, not the ceiling. */
+  [data-cw-act="pan"] .cw-stage,
+  [data-cw-act="pan"] [data-cw-stage] {
+    overflow-x: auto; overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+  }
+  [data-cw-pan] > * { scroll-snap-align: center; }
+  [data-cw-spotlight]::after { display: none; }
+  /* A worldflight keeps its whole story here. No clip is ever fetched, so the
+     posters are the film, and they cross-dissolve through exactly the same
+     seams at exactly the same scroll positions. The push-in and the copy drift
+     are the only things that go. */
+  .cw-world__poster, [data-cw-copy] { transform: none !important; }
+}
+
+/* --------------------------------------------------------------- mobile -- */
+@media (max-width: 860px) {
+  .cw-copy { inset-inline: var(--cw-gutter); max-width: none; }
+  .cw-copy--trail { text-align: left; }
+  .cw-stage { height: 100svh; }
+  /* .cw-copy--trail re-anchors to the left and spans the full width here, so a
+     bottom-RIGHT corner gradient darkens the one corner the copy just left and
+     guarantees a contrast failure over any bright clip. Point the density at
+     the copy: the same band .cw-scrim--band paints. */
+  .cw-scrim--trail {
+    background: linear-gradient(to top,
+      color-mix(in oklab, var(--cw-canvas) 94%, transparent) 0%,
+      color-mix(in oklab, var(--cw-canvas) 74%, transparent) 22%,
+      color-mix(in oklab, var(--cw-canvas) 30%, transparent) 42%,
+      transparent 58%);
+  }
+}

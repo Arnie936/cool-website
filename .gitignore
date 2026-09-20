@@ -1,0 +1,24 @@
+# Local credentials and settings
+.env
+.env.*
+!.env.example
+.cool-website.json
+*.pem
+*.key
+
+# Dependencies and generated website projects
+node_modules/
+/builds/
+/lab/
+/out/
+/output/
+/website-output/
+/cool-website/
+/seo/
+
+# Local caches and logs
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+Thumbs.db

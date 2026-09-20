@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cool Website"
+  short_description: "Deutsche Websites mit Scroll-Design und optionaler SEO"
+  default_prompt: "Erstelle mit $cool-website eine individuelle deutsche Website."
