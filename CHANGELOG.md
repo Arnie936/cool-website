@@ -1,5 +1,14 @@
 # Cool Website changes
 
+## Optional Higgsfield video API
+
+- Add `.env.example` with KIE and Higgsfield API credential placeholders.
+- Keep KIE as default; support an explicit Higgsfield choice in the skill and preflight.
+- Check only selected-provider credentials and reject empty/example values.
+- Document official Higgsfield REST generation, model-specific inputs, polling,
+  budget checks, and local video download/encoding.
+- Share project environment loading between preflight and the KIE helper.
+
 ## Optional SEO phase
 
 - Offer SEO immediately after the first interview round, before page planning.

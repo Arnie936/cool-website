@@ -4,7 +4,7 @@
 
 Use Codex's integrated `image_gen` tool for new raster images, reference-based
 variants, edits, clean background plates, and transparent cutouts. Follow the
-imagegen skill and the tool's current schema. Do not use kie.ai for images.
+imagegen skill and the tool's current schema. Do not use external video providers for images.
 No KIE or external image API key is needed for this route.
 
 1. Choose the visual direction and reuse one consistent style description.
@@ -21,24 +21,41 @@ No KIE or external image API key is needed for this route.
 
 If the integrated model is unavailable, report that limitation and continue
 independent work. Do not silently use an external image provider. Generated
-images used as video inputs are uploaded to kie.ai only for video generation.
+images used as video inputs go only to the selected video provider.
 
-## Videos: kie.ai only when needed
+## Videos: choose kie.ai or Higgsfield when needed
+
+Honor the user's provider choice. Otherwise read `COOL_WEBSITE_VIDEO_PROVIDER`
+from the process environment or nearest project `.env`; default to `kie`.
+Copy the supplied `.env.example` into the website project root as `.env` and
+fill only that provider's credentials. Never place secrets in the public build,
+frontend code, logs, or source control. A copied placeholder is not configured.
+The scripts read the nearest `.env` up to eight directories above the working
+directory; process environment values override it. Run from the website project.
+
+For **Higgsfield**, configure `HF_API_KEY_ID` and `HF_API_KEY_SECRET`, run
+`doctor.mjs --video --provider higgsfield`, and follow
+[higgsfield-api.md](higgsfield-api.md) for REST model selection and generation.
+The KIE helper does not route Higgsfield requests. Do not silently fall back to
+KIE if Higgsfield is unavailable. Check current API balance and pricing in the
+Higgsfield Console; `--probe` does not authenticate or check Higgsfield credit.
+
+For **KIE**, use the following existing helper:
 
 The video helper supports `probe` and `shot`. Its current configured video
 model is `kling/v2-1-pro`. Verify current availability and pricing before paid
 generation; do not treat old credit estimates as current prices.
 
 ```bash
-node <skill>/scripts/doctor.mjs --video
+node <skill>/scripts/doctor.mjs --video --provider kie
 node <skill>/scripts/kie.mjs probe
 node <skill>/scripts/kie.mjs shot "<camera move>" assets/01-hero.png out/01.mp4 --dur 5
 bash <skill>/scripts/encode.sh out/01.mp4 assets/01.mp4
 bash <skill>/scripts/encode.sh out/01.mp4 assets/01-m.mp4 mobile
 ```
 
-Only video generation requires `KIE_AI_API_KEY`. Supplied footage can be
-prepared locally without a KIE call. A page with images and CSS/JS motion
+KIE video generation requires `KIE_AI_API_KEY`; Higgsfield needs only its own
+credentials. Supplied footage can be prepared locally without an API call. A page with images and CSS/JS motion
 does not need generated video. Choose the number of assets from the design;
 ordinary multi-section pages use at most two video-scrub acts.
 
@@ -113,13 +130,16 @@ Prompt shape: what continues, how the camera moves, then the negatives.
 > frame throughout. One single continuous take, no cuts, no camera shake, no
 > zoom snap. Slow, cinematic, controlled.
 
-The script already sends a negative prompt covering judder, warping, morphing,
+The KIE script already sends a negative prompt covering judder, warping, morphing,
 flicker and scene changes, which are the failure modes that specifically wreck a
 scrub.
 
 ### Seam locking, if you actually need a chain
 
-`--tail` pins the last frame as well as the first. Leg N's tail is leg N+1's
+For Higgsfield, verify that the selected model supports a last-frame field;
+use its documented schema, not KIE's `tail_image_url` or CLI flags.
+
+In the KIE helper, `--tail` pins the last frame as well as the first. Leg N's tail is leg N+1's
 head, so the joint is frame-identical:
 
 ```bash

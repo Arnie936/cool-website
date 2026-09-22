@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * Preflight. Run this BEFORE the interview, not after the first failure.
+ * Preflight. Run after the brief and before building.
  *
  *   node scripts/doctor.mjs            check everything
- *   node scripts/doctor.mjs --probe    also spend one API call to read the balance
+ *   node scripts/doctor.mjs --video --provider higgsfield   check Higgsfield credentials
+ *   node scripts/doctor.mjs --probe --provider kie   read KIE balance
  *
  * Every check that can fail deep inside a build with a misleading message is
  * checked here with an honest one. The two that actually bite:
@@ -12,7 +13,7 @@
  *     scale, fps, psnr and the webp muxer, then fails with "No option name
  *     near ..." or "Unable to choose an output format", both of which read as
  *     a mistake in your command rather than a missing feature.
- *   - no KIE_AI_API_KEY, which only matters if you are generating videos.
+ *   - missing provider credentials, which only matter for generated videos.
  */
 
 import fs from "node:fs";
@@ -20,6 +21,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { paths } from "./workspace.mjs";
+import { readConfig, videoConfig } from "./video-config.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const rows = [];
@@ -87,24 +89,24 @@ if (ffmpeg && filterCount > 200) {
 // Browser verification uses Codex's integrated browser via mcp__cua_repl.
 // Its availability is checked by the agent, not through local Node packages.
 
-// ------------------------------------------------------------- kie key ----
-function findKey() {
-  if (process.env.KIE_AI_API_KEY) return "env";
-  let dir = process.cwd();
-  for (let i = 0; i < 8; i++) {
-    const p = path.join(dir, ".env");
-    if (fs.existsSync(p) && /^\s*KIE_AI_API_KEY\s*=\s*\S+/m.test(fs.readFileSync(p, "utf8"))) return p;
-    const up = path.dirname(dir);
-    if (up === dir) break;
-    dir = up;
-  }
-  return null;
-}
+// ------------------------------------------------------ video provider ----
 const needsVideo = process.argv.includes("--video") || process.argv.includes("--probe");
-const keyWhere = needsVideo ? findKey() : null;
+let selectedVideo = null;
 if (needsVideo) {
-  add("required", "KIE_AI_API_KEY (video)", Boolean(keyWhere), keyWhere || "not set",
-    "Set KIE_AI_API_KEY only for kie.ai video generation. Images use the integrated image model.");
+  try {
+    const index = process.argv.indexOf("--provider");
+    if (index !== -1 && (!process.argv[index + 1] || process.argv[index + 1].startsWith("--"))) {
+      throw new Error("--provider requires kie or higgsfield.");
+    }
+    selectedVideo = videoConfig(readConfig(), index === -1 ? undefined : process.argv[index + 1]);
+    for (const key of selectedVideo.required) {
+      const ok = !selectedVideo.missing.includes(key);
+      add("required", `${key} (${selectedVideo.provider})`, ok, ok ? "configured (not authenticated)" : "missing or placeholder",
+        "Copy .env.example to the website project root as .env and fill the selected provider credentials.");
+    }
+  } catch (error) {
+    add("required", "video provider", false, error.message, "Use kie or higgsfield.");
+  }
 }
 
 // ----------------------------------------------------------- workspace ----
@@ -140,7 +142,10 @@ console.log(softFails.length
   ? `\u001b[33mReady, with ${softFails.length} optional item(s) missing (see above).\u001b[0m\n`
   : "\u001b[32mReady.\u001b[0m\n");
 
-if (process.argv.includes("--probe") && keyWhere) {
+if (process.argv.includes("--probe") && selectedVideo?.provider === "higgsfield") {
+  console.log("Higgsfield: local credentials checked only. Check API balance/pricing in the Higgsfield Console; no remote probe or paid generation was run.");
+}
+if (process.argv.includes("--probe") && selectedVideo?.provider === "kie") {
   const { execFileSync: x } = await import("node:child_process");
   try {
     console.log("credit: " + x(process.execPath, [path.join(HERE, "kie.mjs"), "probe"], { encoding: "utf8" }).trim().replace(/^credit:\s*/, ""));

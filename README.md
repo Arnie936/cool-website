@@ -9,7 +9,7 @@ auf Deutsch; eine andere Sprache kannst du ausdrücklich vorgeben.
 - Klärt Angebot, Zielgruppe, Gestaltung und gewünschte Besucheraktion.
 - Plant Seitenstruktur, visuelle Ebenen und passende Interaktionen.
 - Nutzt vorhandene Medien oder das integrierte Bildmodell von Codex für Bilder
-  und Bildbearbeitung. Videos werden bei Bedarf über kie.ai erzeugt.
+  und Bildbearbeitung. Videos werden bei Bedarf über kie.ai oder die offizielle Higgsfield API erzeugt.
 - Bietet nach der ersten Interviewrunde SEO mit dem DataForSEO MCP an und
   begleitet Einrichtung, Keyword-Recherche, Umsetzung und Prüfung.
 - Baut HTML-Seiten mit einer mitgelieferten JavaScript-/CSS-Engine.
@@ -55,7 +55,7 @@ API-Abfragen oder neuen externen Verbindungen.
 | Website visuell kontrollieren | Integrierter Browser über `mcp__cua_repl` |
 | Hilfsscripts verwenden | Node.js 18 oder neuer |
 | Videos für Scrollen vorbereiten | Vollständiges FFmpeg und Bash, unter Windows etwa Git Bash |
-| Videos erzeugen, optional | kie.ai-Konto, Guthaben und `KIE_AI_API_KEY` |
+| Videos erzeugen, optional | kie.ai mit `KIE_AI_API_KEY` oder Higgsfield API mit `HF_API_KEY_ID` und `HF_API_KEY_SECRET`, jeweils mit API-Guthaben |
 | Datenbasierte SEO, optional | DataForSEO-Konto und verbundener DataForSEO MCP |
 
 Die integrierten Bild- und Browserfunktionen müssen in der verwendeten
@@ -93,6 +93,38 @@ node .agents/skills/cool-website/scripts/doctor.mjs --video
 
 Die Vorabprüfung prüft lokale Voraussetzungen. Sie bestätigt nicht die
 Verfügbarkeit integrierter Tools oder eine erfolgreiche externe Anmeldung.
+
+## Video-Anbieter konfigurieren
+
+Es gibt eine [.env.example](.env.example). Kopiere sie als `.env` in den
+Stammordner deines Website-Projekts und trage nur die Zugangsdaten des
+gewünschten Anbieters ein. Beispielkonfiguration für Higgsfield:
+
+```dotenv
+COOL_WEBSITE_VIDEO_PROVIDER=higgsfield
+KIE_AI_API_KEY=your_kie_api_key
+HF_API_KEY_ID=your_higgsfield_key_id
+HF_API_KEY_SECRET=your_higgsfield_key_secret
+```
+
+Für KIE setze den Anbieter auf `kie` und fülle `KIE_AI_API_KEY` aus.
+Die ungenutzten Platzhalter können bleiben. Ohne Anbieterwahl bleibt KIE der
+Standard. Bereits gesetzte Umgebungsvariablen haben Vorrang vor der nächsten
+`.env` oberhalb des Arbeitsordners. Bilder und vorhandene Videos brauchen
+keinen dieser Schlüssel. `.env` niemals in den öffentlichen Website-Ordner
+kopieren oder committen; im Website-Projekt ebenfalls per `.gitignore` ausschließen.
+
+```sh
+node .agents/skills/cool-website/scripts/doctor.mjs --video --provider higgsfield
+```
+
+Die Prüfung akzeptiert keine leeren Werte oder mitgelieferten Platzhalter und
+verlangt nur die Zugangsdaten des gewählten Anbieters. Sie authentifiziert
+Higgsfield nicht. `--provider` überschreibt die Auswahl nur für diese Prüfung.
+KIE nutzt weiterhin `scripts/kie.mjs`; für Higgsfield folgt der Agent dem
+[REST-Leitfaden](references/higgsfield-api.md). API-Keys erhältst du in der
+[Higgsfield Console](https://console.higgsfield.ai/). Ein Website-Abo oder
+CLI-Login ersetzt diese API-Zugangsdaten nicht.
 
 ## Optionale SEO
 

@@ -18,6 +18,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { readConfig, hasCredential } from "./video-config.mjs";
 
 const API = "https://api.kie.ai";
 const UPLOAD = "https://kieai.redpandaai.co/api/file-base64-upload";
@@ -27,26 +28,10 @@ const MODELS = {
 };
 
 // ---------------------------------------------------------------- key ----
-function findEnv(start) {
-  let dir = path.resolve(start);
-  for (let i = 0; i < 8; i++) {
-    const p = path.join(dir, ".env");
-    if (fs.existsSync(p)) return p;
-    const up = path.dirname(dir);
-    if (up === dir) break;
-    dir = up;
-  }
-  return null;
-}
 function loadKey() {
-  if (process.env.KIE_AI_API_KEY) return process.env.KIE_AI_API_KEY;
-  const envPath = findEnv(process.cwd());
-  if (!envPath) throw new Error("KIE_AI_API_KEY not set and no .env found walking up from " + process.cwd());
-  for (const line of fs.readFileSync(envPath, "utf8").split(/\r?\n/)) {
-    const m = line.match(/^\s*KIE_AI_API_KEY\s*=\s*(.+?)\s*$/);
-    if (m) return m[1].replace(/^["']|["']$/g, "");
-  }
-  throw new Error("KIE_AI_API_KEY not found in " + envPath);
+  const key = readConfig().KIE_AI_API_KEY;
+  if (!hasCredential(key)) throw new Error("Set KIE_AI_API_KEY in the environment or project .env; placeholder values are not credentials.");
+  return key;
 }
 let H;
 
